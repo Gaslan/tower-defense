@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Isometric Tower Defense</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/ui/styles.css" />
+  </head>
+  <body>
+    <div id="game-container" class="is-menu-bg"></div>
+
+    <!-- Persistent Meta Menu Shell (Campaign & Barracks) -->
+    <div id="menu-shell" class="menu-shell">
+      <header id="menu-header" class="hud-panel menu-header">
+        <div class="menu-player-badge">
+          <div class="menu-level-crest">
+            <span id="menu-player-level">Lv.1</span>
+          </div>
+          <div class="menu-xp-block">
+            <div class="menu-xp-head">
+              <span class="menu-xp-label">COMMANDER</span>
+              <span id="menu-xp-text" class="menu-xp-text">0 / 100 XP</span>
+            </div>
+            <div class="menu-xp-track">
+              <div id="menu-xp-fill" class="menu-xp-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <nav class="menu-nav-tabs" aria-label="Menu navigation">
+          <button type="button" id="nav-tab-campaign" class="action-btn menu-tab-btn is-active" aria-pressed="true">
+            <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z" fill="none" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" />
+              <path d="M9 4v14M15 6v14" stroke="#ffffff" stroke-width="1.6" />
+            </svg>
+            <span>Campaign Map</span>
+          </button>
+          <button type="button" id="nav-tab-barracks" class="action-btn menu-tab-btn" aria-pressed="false">
+            <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3l8 3.5V12c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10V6.5L12 3z" fill="none" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" />
+              <path d="M9 12l2 2 4-4" fill="none" stroke="#ffd166" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>Barracks</span>
+          </button>
+        </nav>
+
+        <div class="menu-crystal-pill" title="Arcane Crystals">
+          <div class="crystal-medallion" aria-hidden="true">
+            <svg class="crystal-svg" viewBox="0 0 28 28">
+              <defs>
+                <linearGradient id="crystalGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#7df9ff" />
+                  <stop offset="55%" stop-color="#38bdf8" />
+                  <stop offset="100%" stop-color="#a855f7" />
+                </linearGradient>
+              </defs>
+              <polygon points="14,2 23,10 19,25 9,25 5,10" fill="url(#crystalGrad)" stroke="#e0f7ff" stroke-width="1.6" stroke-linejoin="round" />
+              <polyline points="5,10 14,13 23,10" fill="none" stroke="#ffffff" stroke-width="1.2" opacity="0.8" />
+              <line x1="14" y1="2" x2="14" y2="25" stroke="#ffffff" stroke-width="1.1" opacity="0.65" />
+            </svg>
+          </div>
+          <div class="pill-readout">
+            <span class="stat-label">Crystals</span>
+            <span id="menu-crystals" class="stat-value stat-crystals">0</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="menu-screens-stage">
+        <section id="screen-campaign" class="hud-panel menu-screen menu-screen--campaign" aria-label="Campaign Map">
+          <div class="campaign-top-bar">
+            <div class="campaign-title-group">
+              <div class="menu-screen-badge">KINGDOM DEFENSE • ENDLESS REALMS</div>
+              <h1 class="menu-screen-title">CAMPAIGN MAP</h1>
+            </div>
+            <div class="campaign-meta-row">
+              <span id="campaign-highest-path" class="campaign-meta-pill">Unlocked: Path 1</span>
+              <span class="campaign-meta-pill campaign-meta-pill--stars">Stars Earned: <strong id="campaign-total-stars">0 ★</strong></span>
+            </div>
+          </div>
+
+          <div class="campaign-map-layout">
+            <div id="campaign-trail-viewport" class="campaign-trail-viewport" aria-label="Scrollable campaign path trail">
+              <div id="campaign-trail-canvas" class="campaign-trail-canvas">
+                <svg id="campaign-trail-svg" class="campaign-trail-svg" aria-hidden="true"></svg>
+                <div id="campaign-nodes-layer" class="campaign-nodes-layer" role="list" aria-label="Campaign path nodes"></div>
+              </div>
+            </div>
+
+            <aside id="campaign-preview-card" class="campaign-preview-card" aria-label="Selected path details">
+              <div class="preview-header-row">
+                <span id="preview-path-tag" class="preview-path-tag">PATH 1</span>
+                <span id="preview-boss-banner" class="preview-boss-banner is-hidden">BOSS REALM</span>
+              </div>
+              <h2 id="preview-path-name" class="preview-path-name">Emerald Valley</h2>
+              <div id="preview-minimap" class="preview-minimap"></div>
+              <div class="preview-stats-grid">
+                <div class="preview-stat-cell">
+                  <span class="preview-stat-label">BIOME</span>
+                  <span id="preview-theme-name" class="preview-stat-value">Emerald Valley</span>
+                </div>
+                <div class="preview-stat-cell">
+                  <span class="preview-stat-label">WAVES</span>
+                  <span id="preview-total-waves" class="preview-stat-value">10 Waves</span>
+                </div>
+                <div class="preview-stat-cell">
+                  <span class="preview-stat-label">REWARD</span>
+                  <span id="preview-crystal-reward" class="preview-stat-value preview-stat-value--crystal">+50 💎</span>
+                </div>
+                <div class="preview-stat-cell">
+                  <span class="preview-stat-label">RATING</span>
+                  <span id="preview-earned-stars" class="preview-stat-value preview-stat-value--stars">☆☆☆</span>
+                </div>
+              </div>
+              <button type="button" id="campaign-start-battle-btn" class="action-btn play-path-btn campaign-start-btn">
+                <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <polygon points="6,4 20,12 6,20" fill="#ffffff" stroke="#145a32" stroke-width="1.5" stroke-linejoin="round" />
+                </svg>
+                <span>Start Battle</span>
+              </button>
+            </aside>
+          </div>
+        </section>
+
+        <section id="screen-barracks" class="hud-panel menu-screen menu-screen--barracks is-hidden" aria-label="Barracks">
+          <div class="barracks-top-bar">
+            <div class="campaign-title-group">
+              <div class="menu-screen-badge menu-screen-badge--arcane">GARRISON FORGE</div>
+              <h1 class="menu-screen-title">BARRACKS</h1>
+            </div>
+            <div class="barracks-balance-well">
+              <span class="game-over-stat-label">AVAILABLE CRYSTALS</span>
+              <div class="barracks-crystals-row">
+                <svg class="reward-crystal-svg" viewBox="0 0 28 28" aria-hidden="true">
+                  <polygon points="14,2 23,10 19,25 9,25 5,10" fill="#38bdf8" stroke="#e0f7ff" stroke-width="1.8" stroke-linejoin="round" />
+                </svg>
+                <span id="barracks-crystals-val" class="barracks-crystals-val">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="barracks-unit-strip" class="barracks-unit-strip" role="tablist" aria-label="Select unit to upgrade"></div>
+
+          <div class="barracks-detail-card">
+            <div class="barracks-hero-row">
+              <div id="barracks-unit-emblem" class="unit-card-emblem unit-card-emblem--archer" aria-hidden="true"></div>
+              <div class="barracks-hero-copy">
+                <div class="barracks-hero-title-row">
+                  <h2 id="barracks-unit-name" class="barracks-unit-name">Archer</h2>
+                  <span id="barracks-unit-role" class="barracks-unit-role">Ranged Marksman</span>
+                </div>
+                <p id="barracks-unit-desc" class="barracks-unit-desc"></p>
+              </div>
+            </div>
+
+            <div class="barracks-eff-stats">
+              <div class="barracks-eff-pill">
+                <span class="barracks-eff-label">BASE DMG</span>
+                <span id="barracks-eff-damage" class="barracks-eff-val">15</span>
+              </div>
+              <div class="barracks-eff-pill">
+                <span class="barracks-eff-label">RANGE</span>
+                <span id="barracks-eff-range" class="barracks-eff-val">3.50</span>
+              </div>
+              <div class="barracks-eff-pill">
+                <span class="barracks-eff-label">FIRE RATE</span>
+                <span id="barracks-eff-firerate" class="barracks-eff-val">1.50/s</span>
+              </div>
+              <div class="barracks-eff-pill">
+                <span class="barracks-eff-label">MAX BATTLE LV</span>
+                <span id="barracks-eff-maxlevel" class="barracks-eff-val barracks-eff-val--mythic">Lv.3</span>
+              </div>
+            </div>
+
+            <div id="barracks-upgrades-list" class="barracks-upgrades-list"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="ui-overlay" class="is-hidden">
+      <div class="top-hud-wrap">
+        <div id="top-hud">
+        <div class="hud-cluster hud-cluster--left">
+          <div id="hud-gold-pill" class="stat-item resource-pill resource-pill--gold">
+            <div class="pill-medallion pill-medallion--gold" aria-hidden="true">
+              <svg class="pill-icon" viewBox="0 0 28 28">
+                <circle cx="14" cy="14" r="12" fill="#f5b041" stroke="#7d4a02" stroke-width="2" />
+                <circle cx="14" cy="14" r="8.5" fill="#ffd166" stroke="#c97a04" stroke-width="1.4" />
+                <path d="M14 7.5v13M11.5 10.5c0-1.2 1.1-2 2.5-2s2.5.8 2.5 2-1.1 1.8-2.5 2.1-2.5.9-2.5 2.2 1.1 2.1 2.5 2.1 2.5-.9 2.5-2.1" fill="none" stroke="#8e5403" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </div>
+            <div class="pill-readout">
+              <span class="stat-label">Treasury</span>
+              <span id="hud-gold" class="stat-value stat-gold">200</span>
+            </div>
+          </div>
+
+          <div id="hud-lives-pill" class="stat-item resource-pill resource-pill--lives">
+            <div class="pill-medallion pill-medallion--lives" aria-hidden="true">
+              <svg class="pill-icon" viewBox="0 0 28 28">
+                <path
+                  d="M14 24.5s-8.8-5.4-10.6-11.2C2 8.8 5.2 4.8 9.2 4.8c2.2 0 3.8 1.1 4.8 2.6 1-1.5 2.6-2.6 4.8-2.6 4 0 7.2 4 5.8 8.5-1.8 5.8-10.6 11.2-10.6 11.2z"
+                  fill="#e74c3c"
+                  stroke="#641e16"
+                  stroke-width="2"
+                />
+                <path d="M8.4 9.2c1-1.3 2.4-1.8 3.6-1.2" fill="none" stroke="#ffd5d1" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+            </div>
+            <div class="pill-readout">
+              <span class="stat-label">Kingdom</span>
+              <span id="hud-lives" class="stat-value stat-lives">10</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hud-cluster hud-cluster--center">
+          <div class="wave-crest-card hud-panel">
+            <div class="wave-crest-info">
+              <div class="wave-crest-row">
+                <svg class="wave-crest-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 19L19 5M15.5 4.5l4 0 0 4" fill="none" stroke="#7cc4fa" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M19 19L5 5M8.5 4.5l-4 0 0 4" fill="none" stroke="#5dade2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M4.5 16l3.5 3.5M19.5 16l-3.5 3.5" fill="none" stroke="#ffd166" stroke-width="2.2" stroke-linecap="round" />
+                </svg>
+                <span id="hud-wave" class="stat-value stat-wave">Wave 1 Ready • 7 Enemies</span>
+              </div>
+              <div class="wave-progress-track">
+                <div id="hud-wave-fill" class="wave-progress-fill"></div>
+              </div>
+            </div>
+
+            <button type="button" id="start-wave-btn" class="action-btn wave-start-btn">
+              <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <polygon points="6,4 20,12 6,20" fill="#ffffff" stroke="#145a32" stroke-width="1.5" stroke-linejoin="round" />
+              </svg>
+              <span class="btn-label">Start Wave 1</span>
+              <kbd class="hotkey-hint">[Space]</kbd>
+            </button>
+
+            <button
+              type="button"
+              id="auto-wave-btn"
+              class="action-btn auto-wave-btn"
+              aria-pressed="false"
+              title="Auto-start next wave"
+            >
+              <span class="auto-dot" aria-hidden="true"></span>
+              <span class="btn-label">AUTO</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="hud-cluster hud-cluster--right">
+          <button
+            type="button"
+            id="speed-btn"
+            class="action-btn speed-btn"
+            data-speed="1"
+            title="Cycle game speed [F]"
+          >
+            <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <polygon points="4,6 13,12 4,18" fill="#ffffff" />
+              <polygon points="12,6 21,12 12,18" fill="#ffffff" />
+            </svg>
+            <span id="speed-btn-label" class="btn-label">1x</span>
+          </button>
+          <div class="zoom-controls">
+            <button type="button" id="zoom-out-btn" class="action-btn icon-btn" aria-label="Zoom out">
+              <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <line x1="5" y1="12" x2="19" y2="12" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round" />
+              </svg>
+            </button>
+            <button type="button" id="zoom-in-btn" class="action-btn icon-btn" aria-label="Zoom in">
+              <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" fill="none" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round" />
+              </svg>
+            </button>
+          </div>
+          <button type="button" id="mute-btn" class="action-btn mute-btn">
+            <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <polygon points="3,9 8,9 14,4 14,20 8,15 3,15" fill="#ffffff" stroke="#1b4f72" stroke-width="1.3" stroke-linejoin="round" />
+              <path class="speaker-waves" d="M17 8.5a5 5 0 0 1 0 7M19.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <span class="btn-label">Sound: ON</span>
+          </button>
+          <button
+            type="button"
+            id="settings-btn"
+            class="action-btn icon-btn settings-btn"
+            aria-label="Pause and settings"
+            title="Pause & Settings"
+          >
+            <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="6" y="5" width="4" height="14" rx="1.2" fill="#ffffff" />
+              <rect x="14" y="5" width="4" height="14" rx="1.2" fill="#ffffff" />
+            </svg>
+          </button>
+        </div>
+        </div>
+        <div id="active-perks-bar" class="active-perks-bar is-hidden" aria-label="Active Perks"></div>
+      </div>
+
+      <div id="wave-banner" class="wave-banner is-hidden" aria-live="polite">
+        <div class="wave-banner-inner">
+          <svg class="wave-banner-wing wave-banner-wing--left" viewBox="0 0 42 20" aria-hidden="true">
+            <path d="M40 10H12L2 4l6 6-6 6 10-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <div class="wave-banner-center">
+            <svg class="wave-banner-crest" viewBox="0 0 28 28" aria-hidden="true">
+              <path d="M14 2l10 4v7c0 6.5-4.4 11.4-10 13-5.6-1.6-10-6.5-10-13V6l10-4z" fill="rgba(255,209,102,0.18)" stroke="currentColor" stroke-width="2" />
+              <path d="M9.5 18.5l9-9M18.5 18.5l-9-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+            </svg>
+            <div class="wave-banner-copy">
+              <span id="wave-banner-eyebrow" class="wave-banner-eyebrow">PREPARE FOR BATTLE</span>
+              <span id="wave-banner-text" class="wave-banner-text">WAVE 1 — INCOMING!</span>
+            </div>
+          </div>
+          <svg class="wave-banner-wing wave-banner-wing--right" viewBox="0 0 42 20" aria-hidden="true">
+            <path d="M2 10h28l10-6-6 6 6 6-10-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+      </div>
+
+      <div id="unit-inspector" class="hud-panel inspector-card is-hidden" data-unit-id="archer">
+        <button
+          type="button"
+          id="inspector-close-btn"
+          aria-label="Close inspector"
+        >
+          ✕
+        </button>
+        <div class="inspector-header">
+          <div id="inspector-header-bg" class="inspector-header-bg" aria-hidden="true"></div>
+          <div id="inspector-icon" class="unit-card-emblem unit-card-emblem--archer" aria-hidden="true"></div>
+          <div class="inspector-title-group">
+            <span id="inspector-name">Archer</span>
+            <span id="inspector-role" class="inspector-role">Ranged Marksman</span>
+            <div id="inspector-level" class="inspector-stars" aria-label="Unit Level">★ ☆ ☆</div>
+          </div>
+        </div>
+        <div class="inspector-stats">
+          <div class="inspector-stat-pill">
+            <svg class="stat-pill-icon stat-pill-icon--dmg" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M15.5 3.5l1 1-6.2 6.2 1.7 1.7-1.2 1.2-1.8-1.8-3.6 3.6-1.4-1.4 3.6-3.6-1.8-1.8 1.2-1.2 1.7 1.7 6.2-6.2z" fill="currentColor" />
+            </svg>
+            <div class="stat-pill-info">
+              <span id="inspector-label-dmg" class="inspector-stat-label">DMG</span>
+              <div class="stat-val-row">
+                <span id="inspector-damage" class="inspector-stat-val">15</span>
+                <span id="inspector-damage-next" class="stat-next-delta"></span>
+              </div>
+            </div>
+          </div>
+          <div class="inspector-stat-pill">
+            <svg class="stat-pill-icon stat-pill-icon--rng" viewBox="0 0 20 20" aria-hidden="true">
+              <circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+              <circle cx="10" cy="10" r="2.2" fill="currentColor" />
+              <path d="M10 1.5v2.5M10 16v2.5M1.5 10h2.5M16 10h2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+            <div class="stat-pill-info">
+              <span id="inspector-label-rng" class="inspector-stat-label">RNG</span>
+              <div class="stat-val-row">
+                <span id="inspector-range" class="inspector-stat-val">3.5</span>
+                <span id="inspector-range-next" class="stat-next-delta"></span>
+              </div>
+            </div>
+          </div>
+          <div class="inspector-stat-pill">
+            <svg class="stat-pill-icon stat-pill-icon--rate" viewBox="0 0 20 20" aria-hidden="true">
+              <polygon points="11.5,2 4.5,11 9.5,11 8.5,18 15.5,9 10.5,9" fill="currentColor" />
+            </svg>
+            <div class="stat-pill-info">
+              <span id="inspector-label-rate" class="inspector-stat-label">RATE</span>
+              <div class="stat-val-row">
+                <span id="inspector-firerate" class="inspector-stat-val">1.50/s</span>
+                <span id="inspector-firerate-next" class="stat-next-delta"></span>
+              </div>
+            </div>
+          </div>
+          <div class="inspector-stat-pill">
+            <svg class="stat-pill-icon stat-pill-icon--kills" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M6 3h8v4a4 4 0 0 1-8 0V3zm-2.5 1.5H6v3H4.5a1.5 1.5 0 0 1 0-3zm10.5 0h2.5a1.5 1.5 0 0 1 0 3H14v-3zM9 11h2v3h2.5v2h-7v-2H9v-3z" fill="currentColor" />
+            </svg>
+            <div class="stat-pill-info">
+              <span id="inspector-label-kills" class="inspector-stat-label">KILLS</span>
+              <div class="stat-val-row">
+                <span id="inspector-kills" class="inspector-stat-val">0</span>
+                <span id="inspector-tier-badge" class="stat-tier-sub">Lv.1</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="inspector-xp">
+          <div class="inspector-xp-header">
+            <span>EXPERIENCE</span>
+            <span id="inspector-xp-status" class="xp-status-tag">COMBAT XP</span>
+          </div>
+          <div class="xp-bar-track">
+            <div id="inspector-xp-fill"></div>
+            <div class="xp-bar-ticks"></div>
+            <div class="xp-bar-shine"></div>
+            <span id="inspector-xp-text">0 / 100 XP</span>
+          </div>
+        </div>
+        <div id="inspector-targeting" class="inspector-targeting">
+          <span class="inspector-section-label">TARGET PRIORITY</span>
+          <div class="targeting-seg-group" role="group" aria-label="Targeting priority">
+            <button type="button" class="targeting-seg-btn is-active" data-strategy="first" aria-pressed="true">First</button>
+            <button type="button" class="targeting-seg-btn" data-strategy="strongest" aria-pressed="false">Strongest</button>
+            <button type="button" class="targeting-seg-btn" data-strategy="lowest" aria-pressed="false">Lowest</button>
+          </div>
+        </div>
+        <button type="button" id="inspector-upgrade-btn" class="action-btn upgrade-btn">
+          <span class="upgrade-btn-copy">
+            <span class="upgrade-btn-main">UPGRADE</span>
+            <span class="upgrade-btn-sub">+35% DMG • +15% SPD • +10% RNG</span>
+          </span>
+          <span id="inspector-upgrade-cost-badge" class="upgrade-cost-badge">40g</span>
+        </button>
+        <button type="button" id="inspector-sell-btn" class="action-btn sell-btn">
+          <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5" fill="#ffd166" stroke="#7d4a02" stroke-width="1.8" />
+            <path d="M12 7v10M9.8 9.4c0-1 1-1.6 2.2-1.6s2.2.6 2.2 1.6-1 1.4-2.2 1.7-2.2.8-2.2 1.8 1 1.6 2.2 1.6 2.2-.6 2.2-1.6" fill="none" stroke="#7d4a02" stroke-width="1.7" stroke-linecap="round" />
+          </svg>
+          <span id="inspector-sell-label">Sell (+35g)</span>
+        </button>
+      </div>
+
+      <div id="game-over-modal" class="is-hidden">
+        <div class="hud-panel game-over-card">
+          <div class="game-over-crest" aria-hidden="true">
+            <svg viewBox="0 0 56 56" width="54" height="54">
+              <circle cx="28" cy="28" r="25" fill="rgba(231, 76, 60, 0.14)" stroke="rgba(255, 209, 102, 0.4)" stroke-width="1.5" />
+              <path d="M28 6L45 12.5V26.5C45 38.2 37.2 47.4 28 50C18.8 47.4 11 38.2 11 26.5V12.5L28 6Z" fill="#7b241c" stroke="#ffd166" stroke-width="2.6" stroke-linejoin="round" />
+              <path d="M20 20L36 36M36 20L20 36" stroke="#ffd166" stroke-width="3.4" stroke-linecap="round" />
+            </svg>
+          </div>
+          <h2 class="game-over-title">GAME OVER</h2>
+          <p class="game-over-subtitle">The kingdom defenses have fallen!</p>
+          <div class="modal-divider" aria-hidden="true"></div>
+          <div class="game-over-stats-well">
+            <span class="game-over-stat-label">FINAL WAVE REACHED</span>
+            <span id="game-over-wave" class="game-over-wave-badge">1</span>
+          </div>
+          <div class="game-over-rewards-row">
+            <div class="game-over-reward-pill game-over-reward-pill--crystals">
+              <svg class="reward-crystal-svg" viewBox="0 0 28 28" aria-hidden="true">
+                <polygon points="14,2 23,10 19,25 9,25 5,10" fill="#38bdf8" stroke="#e0f7ff" stroke-width="1.8" stroke-linejoin="round" />
+              </svg>
+              <span id="game-over-crystals" class="game-over-reward-val">+0</span>
+              <span class="game-over-reward-label">Crystals</span>
+            </div>
+            <div class="game-over-reward-pill game-over-reward-pill--xp">
+              <span id="game-over-xp" class="game-over-reward-val">+0 XP</span>
+              <span class="game-over-reward-label">Account XP</span>
+            </div>
+          </div>
+          <div class="game-over-actions">
+            <button type="button" id="restart-btn" class="action-btn play-again-btn">
+              <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 12a8 8 0 1 0 2.3-5.6L4 8.7M4 4v4.7h4.7" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span>Play Again</span>
+            </button>
+            <button type="button" id="game-over-map-btn" class="action-btn return-map-btn">
+              <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z" fill="none" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" />
+              </svg>
+              <span>Return to Map</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="modal-victory" class="modal-backdrop is-hidden" role="dialog" aria-modal="true" aria-labelledby="victory-title">
+        <div class="hud-panel victory-card">
+          <div class="victory-emblem" aria-hidden="true">
+            <svg viewBox="0 0 56 56">
+              <path d="M28 5L35 19L50 21L39 32L42 47L28 40L14 47L17 32L6 21L21 19Z" fill="#f39c12" stroke="#fff3c4" stroke-width="2.6" stroke-linejoin="round" />
+            </svg>
+          </div>
+          <span id="victory-eyebrow" class="victory-eyebrow">10 / 10 WAVES CLEARED</span>
+          <h2 id="victory-title" class="victory-title">PATH VICTORY!</h2>
+          <p id="victory-path-name" class="victory-subtitle">Path 1: Emerald Valley</p>
+          <div id="victory-stars" class="victory-stars" aria-label="3 of 3 stars"></div>
+          <div class="modal-divider" aria-hidden="true"></div>
+          <div class="game-over-rewards-row">
+            <div class="game-over-reward-pill game-over-reward-pill--crystals">
+              <svg class="reward-crystal-svg" viewBox="0 0 28 28" aria-hidden="true">
+                <polygon points="14,2 23,10 19,25 9,25 5,10" fill="#38bdf8" stroke="#e0f7ff" stroke-width="1.8" stroke-linejoin="round" />
+              </svg>
+              <span id="victory-crystals" class="game-over-reward-val">+0</span>
+              <span class="game-over-reward-label">Crystals</span>
+            </div>
+            <div class="game-over-reward-pill game-over-reward-pill--xp">
+              <span id="victory-xp" class="game-over-reward-val">+0 XP</span>
+              <span class="game-over-reward-label">Account XP</span>
+            </div>
+          </div>
+          <div class="victory-actions">
+            <button type="button" id="victory-next-btn" class="action-btn victory-next-btn">
+              <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <polygon points="5,4 16,12 5,20" fill="#ffffff" stroke="#145a32" stroke-width="1.5" stroke-linejoin="round" />
+                <rect x="17" y="5" width="2.5" height="14" rx="1" fill="#ffffff" />
+              </svg>
+              <span id="victory-next-label">Next Path</span>
+            </button>
+            <button type="button" id="victory-barracks-btn" class="action-btn victory-barracks-btn">
+              <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3l7 3v6c0 4.5-3 8.2-7 9.5C8 20.2 5 16.5 5 12V6l7-3z" fill="none" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" />
+              </svg>
+              <span>Barracks</span>
+            </button>
+            <button type="button" id="victory-map-btn" class="action-btn return-map-btn">
+              <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z" fill="none" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" />
+              </svg>
+              <span>Campaign Map</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="settings-modal" class="modal-backdrop is-hidden" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+        <div class="hud-panel settings-card">
+          <button
+            type="button"
+            id="settings-close-btn"
+            class="modal-close-btn"
+            aria-label="Close settings"
+          >
+            ✕
+          </button>
+          <div class="settings-header">
+            <svg class="settings-crest-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="3.5" fill="none" stroke="#ffd166" stroke-width="2.2" />
+              <path d="M12 2.5v2.4M12 19.1v2.4M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.9 19.1l1.7-1.7M17.4 6.6l1.7-1.7" stroke="#ffd166" stroke-width="2.2" stroke-linecap="round" />
+            </svg>
+            <h2 id="settings-modal-title" class="settings-title">PAUSED &amp; SETTINGS</h2>
+          </div>
+          <div class="modal-divider" aria-hidden="true"></div>
+
+          <div class="settings-rows">
+            <div class="settings-row">
+              <div class="settings-row-head">
+                <label for="settings-volume-slider" class="settings-label">SFX VOLUME</label>
+                <span id="settings-volume-val" class="settings-value-badge">70%</span>
+              </div>
+              <input
+                type="range"
+                id="settings-volume-slider"
+                class="settings-slider"
+                min="0"
+                max="100"
+                value="70"
+              />
+            </div>
+
+            <div class="settings-row settings-row--inline">
+              <span class="settings-label">PARTICLE EFFECTS</span>
+              <button
+                type="button"
+                id="settings-particles-btn"
+                class="action-btn particles-toggle-btn is-on"
+                aria-pressed="true"
+              >
+                ON
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-actions">
+            <button type="button" id="settings-resume-btn" class="action-btn settings-resume-btn">
+              <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <polygon points="7,5 19,12 7,19" fill="#ffffff" stroke="#145a32" stroke-width="1.5" stroke-linejoin="round" />
+              </svg>
+              <span>Resume</span>
+            </button>
+            <button type="button" id="settings-restart-btn" class="action-btn settings-restart-btn">
+              <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 12a8 8 0 1 0 2.3-5.6L4 8.7M4 4v4.7h4.7" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span>Restart Run</span>
+            </button>
+          </div>
+          <div class="settings-secondary-actions">
+            <button type="button" id="settings-map-btn" class="action-btn settings-map-btn">
+              <span>Return to Map</span>
+            </button>
+            <button type="button" id="settings-reset-profile-btn" class="action-btn settings-reset-btn">
+              <span>Reset Save Data</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Roguelike Perk Selection Modal -->
+      <div id="perk-modal" class="modal-backdrop perk-modal-backdrop is-hidden" role="dialog" aria-modal="true" aria-labelledby="perk-modal-title">
+        <div class="hud-panel perk-modal-card">
+          <div class="perk-modal-header">
+            <span class="perk-modal-eyebrow">MILESTONE REACHED</span>
+            <h2 id="perk-modal-title" class="perk-modal-title">CHOOSE A BLESSING</h2>
+          </div>
+          <div id="perk-cards-grid" class="perk-cards-grid"></div>
+        </div>
+      </div>
+
+      <!-- Flying Gold Coin Drop FX Layer -->
+      <div id="coin-fx-layer" class="coin-fx-layer" aria-hidden="true"></div>
+
+      <!-- Floating Enemy Hover Tooltip -->
+      <div id="enemy-tooltip" class="enemy-tooltip is-hidden" role="tooltip">
+        <div class="enemy-tooltip-header">
+          <span id="enemy-tooltip-dot" class="enemy-tooltip-dot"></span>
+          <span id="enemy-tooltip-name" class="enemy-tooltip-name">Grunt</span>
+          <span id="enemy-tooltip-badge" class="enemy-tooltip-badge">GRUNT</span>
+        </div>
+        <div class="enemy-tooltip-hp-track">
+          <div id="enemy-tooltip-hp-fill" class="enemy-tooltip-hp-fill"></div>
+          <span id="enemy-tooltip-hp-text" class="enemy-tooltip-hp-text">60 / 60 HP</span>
+        </div>
+        <div class="enemy-tooltip-meta">
+          <span id="enemy-tooltip-speed" class="enemy-tooltip-stat">SPD: Normal</span>
+          <span id="enemy-tooltip-reward" class="enemy-tooltip-reward">+15g</span>
+        </div>
+      </div>
+
+      <div class="bottom-dock-wrap">
+        <div id="deploy-hint" class="deploy-hint is-hidden">
+          Click a grass tile to deploy • <kbd>ESC</kbd> Cancel
+        </div>
+        <div class="bottom-dock-row">
+          <div id="skill-bar" class="hud-panel" aria-label="Active Skills">
+            <button
+              type="button"
+              id="skill-btn-meteor"
+              class="skill-btn skill-btn--meteor"
+              data-skill-id="meteor"
+              title="Meteor Shower [Q] — Target an area for heavy AoE damage"
+            >
+              <kbd class="unit-hotkey">Q</kbd>
+              <span class="skill-icon-wrap skill-icon-wrap--meteor" aria-hidden="true">
+                <svg class="skill-emblem-svg" viewBox="0 0 36 36">
+                  <circle cx="15" cy="21" r="10" fill="rgba(255, 87, 34, 0.25)" />
+                  <path d="M18 11L30 4L24 16L31 12L21 22" fill="#ff7b00" opacity="0.88" />
+                  <path d="M16 14L27 7L20 18" fill="#ffd166" />
+                  <circle cx="14" cy="22" r="7.5" fill="#ff5400" stroke="#ffd166" stroke-width="1.6" />
+                  <circle cx="13" cy="21" r="4.2" fill="#ff9e00" />
+                  <circle cx="12.5" cy="20.5" r="2" fill="#fff3b0" />
+                </svg>
+              </span>
+              <span class="skill-name">Meteor</span>
+              <span class="skill-sub">AOE • 25s</span>
+              <span class="skill-cd-overlay is-hidden" aria-hidden="true">
+                <span class="skill-cd-fill"></span>
+                <span class="skill-cd-text">25s</span>
+              </span>
+            </button>
+
+            <button
+              type="button"
+              id="skill-btn-frost"
+              class="skill-btn skill-btn--frost"
+              data-skill-id="frost"
+              title="Frost Wave [W] — Slow all enemies by 50% for 4.5s"
+            >
+              <kbd class="unit-hotkey">W</kbd>
+              <span class="skill-icon-wrap skill-icon-wrap--frost" aria-hidden="true">
+                <svg class="skill-emblem-svg" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="11" fill="rgba(56, 189, 248, 0.22)" />
+                  <g stroke="#e0f7ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                    <line x1="18" y1="6" x2="18" y2="30" />
+                    <line x1="7.6" y1="12" x2="28.4" y2="24" />
+                    <line x1="28.4" y1="12" x2="7.6" y2="24" />
+                    <polyline points="15,9 18,12 21,9" />
+                    <polyline points="15,27 18,24 21,27" />
+                    <polyline points="9,15 12.6,14.9 11.4,11.3" />
+                    <polyline points="24.6,24.7 23.4,21.1 27,21" />
+                    <polyline points="27,15 23.4,14.9 24.6,11.3" />
+                    <polyline points="11.4,24.7 12.6,21.1 9,21" />
+                  </g>
+                  <circle cx="18" cy="18" r="2.8" fill="#7df9ff" stroke="#ffffff" stroke-width="1.2" />
+                </svg>
+              </span>
+              <span class="skill-name">Frost</span>
+              <span class="skill-sub">SLOW • 20s</span>
+              <span class="skill-cd-overlay is-hidden" aria-hidden="true">
+                <span class="skill-cd-fill"></span>
+                <span class="skill-cd-text">20s</span>
+              </span>
+            </button>
+          </div>
+
+          <div id="unit-bar" class="hud-panel">
+          <button type="button" class="unit-btn" data-unit-id="archer">
+            <kbd class="unit-hotkey">1</kbd>
+            <span class="unit-card-emblem unit-card-emblem--archer" aria-hidden="true">
+              <svg class="unit-emblem-svg" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="14.5" fill="rgba(46, 204, 113, 0.2)" />
+                <path d="M5 17c1-7 5.5-11.5 10.5-11.5 2.6 0 4.8 1.3 6.2 3.4l-2.5 1.8c-1.8-.6-3.7-.3-5.2.8-2.1 1.6-3.2 4.3-3.2 7.2 0 3.2 1.2 6.8 2.8 9.8H7.2C5.8 25.2 4.6 20.6 5 17z" fill="#145a32" stroke="#58d68d" stroke-width="1.2" stroke-linejoin="round" />
+                <path d="M12.5 6.8l-5.5-3 2.5 4.2" fill="#ffd166" />
+                <path d="M19 6.5c4.5 2 6.8 5.2 7 11.5-.2 6.3-2.5 9.5-7 11.5" fill="none" stroke="#ffd166" stroke-width="2.6" stroke-linecap="round" />
+                <polyline points="18.8,7 13,18 18.8,29" fill="none" stroke="#ecf0f1" stroke-width="1.2" stroke-linejoin="round" />
+                <polygon points="13,18 9.5,15.5 15,17.2" fill="#58d68d" />
+                <polygon points="13,18 9.5,20.5 15,18.8" fill="#58d68d" />
+                <line x1="12.5" y1="18" x2="29" y2="18" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+                <polygon points="32.5,18 26.5,14.8 27.6,18 26.5,21.2" fill="#ffd166" stroke="#7d4a02" stroke-width="0.7" stroke-linejoin="round" />
+              </svg>
+            </span>
+            <span class="unit-name">Archer</span>
+            <span class="unit-role-tag">Marksman</span>
+            <span class="unit-mini-stats">15 DMG • 3.5 RNG</span>
+            <span class="unit-price-tag">
+              <svg class="price-coin-svg" viewBox="0 0 16 16" aria-hidden="true">
+                <circle cx="8" cy="8" r="6.5" fill="#ffd166" stroke="#8e5403" stroke-width="1.5" />
+                <circle cx="8" cy="8" r="3.2" fill="none" stroke="#b7791f" stroke-width="1" />
+              </svg>
+              <span class="unit-cost">50g</span>
+            </span>
+          </button>
+
+          <button type="button" class="unit-btn" data-unit-id="knight">
+            <kbd class="unit-hotkey">2</kbd>
+            <span class="unit-card-emblem unit-card-emblem--knight" aria-hidden="true">
+              <svg class="unit-emblem-svg" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="14.5" fill="rgba(93, 173, 226, 0.2)" />
+                <path d="M27.5 6.5L13 24.5" stroke="#fdfefe" stroke-width="3" stroke-linecap="round" />
+                <path d="M27.5 6.5L15 22" stroke="#85c1e9" stroke-width="1.3" stroke-linecap="round" />
+                <path d="M11 21.5l6 5M12.2 26.2l-2.4 2.8" stroke="#ffd166" stroke-width="2.4" stroke-linecap="round" />
+                <path d="M7.5 8h13v10.5c0 6-6.5 10.2-6.5 10.2S7.5 24.5 7.5 18.5V8z" fill="#1b4f72" stroke="#ffd166" stroke-width="1.8" stroke-linejoin="round" />
+                <path d="M8.8 9.2H14v18c-2.6-1.8-5.2-5-5.2-8.8V9.2z" fill="#2e86c1" />
+                <path d="M14 10v15M10 15.5h8" stroke="#ffd166" stroke-width="2" stroke-linecap="round" />
+                <circle cx="14" cy="15.5" r="1.8" fill="#ffd166" />
+              </svg>
+            </span>
+            <span class="unit-name">Knight</span>
+            <span class="unit-role-tag">Vanguard</span>
+            <span class="unit-mini-stats">40 DMG • 1.6 RNG</span>
+            <span class="unit-price-tag">
+              <svg class="price-coin-svg" viewBox="0 0 16 16" aria-hidden="true">
+                <circle cx="8" cy="8" r="6.5" fill="#ffd166" stroke="#8e5403" stroke-width="1.5" />
+                <circle cx="8" cy="8" r="3.2" fill="none" stroke="#b7791f" stroke-width="1" />
+              </svg>
+              <span class="unit-cost">75g</span>
+            </span>
+          </button>
+
+          <button type="button" class="unit-btn" data-unit-id="mage">
+            <kbd class="unit-hotkey">3</kbd>
+            <span class="unit-card-emblem unit-card-emblem--mage" aria-hidden="true">
+              <svg class="unit-emblem-svg" viewBox="0 0 36 36">
+                <circle cx="22" cy="13" r="11" fill="rgba(217, 128, 250, 0.25)" />
+                <ellipse cx="22" cy="13" rx="10" ry="4" transform="rotate(-24 22 13)" fill="none" stroke="#ffd166" stroke-width="1.2" opacity="0.8" />
+                <line x1="8.5" y1="30.5" x2="18.5" y2="17" stroke="#7d4a02" stroke-width="3.2" stroke-linecap="round" />
+                <line x1="8.5" y1="30.5" x2="18.5" y2="17" stroke="#f5b041" stroke-width="1.8" stroke-linecap="round" />
+                <path d="M14.5 12.5c1 4.2 4 6 8.5 3.5" fill="none" stroke="#ffd166" stroke-width="2.4" stroke-linecap="round" />
+                <polygon points="22,5.5 27,12.5 22,19.5 17,12.5" fill="#d980fa" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round" />
+                <polygon points="22,8.5 24.4,12.5 22,16.5 19.6,12.5" fill="#ffffff" opacity="0.85" />
+                <circle cx="11.5" cy="9" r="1.4" fill="#ffd166" />
+                <circle cx="29.5" cy="19.5" r="1.2" fill="#f9e79f" />
+              </svg>
+            </span>
+            <span class="unit-name">Mage</span>
+            <span class="unit-role-tag">Arcanist</span>
+            <span class="unit-mini-stats">25 AOE • 2.8 RNG</span>
+            <span class="unit-price-tag">
+              <svg class="price-coin-svg" viewBox="0 0 16 16" aria-hidden="true">
+                <circle cx="8" cy="8" r="6.5" fill="#ffd166" stroke="#8e5403" stroke-width="1.5" />
+                <circle cx="8" cy="8" r="3.2" fill="none" stroke="#b7791f" stroke-width="1" />
+              </svg>
+              <span class="unit-cost">120g</span>
+            </span>
+          </button>
+
+          <button type="button" class="unit-btn" data-unit-id="bannerman">
+            <kbd class="unit-hotkey">4</kbd>
+            <span class="unit-card-emblem unit-card-emblem--bannerman" aria-hidden="true">
+              <svg class="unit-emblem-svg" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="14.5" fill="rgba(243, 156, 18, 0.22)" />
+                <line x1="10" y1="30" x2="10" y2="7" stroke="#ffd166" stroke-width="2.6" stroke-linecap="round" />
+                <polygon points="10,5 12.8,8.2 10,10 7.2,8.2" fill="#ffd166" />
+                <polygon points="11.2,9 28,12.5 23.5,17.5 28,22.5 11.2,24" fill="#c0392b" stroke="#ffd166" stroke-width="1.4" stroke-linejoin="round" />
+                <polygon points="17.5,13.5 20.5,16.5 17.5,19.5 14.5,16.5" fill="#ffd166" />
+              </svg>
+            </span>
+            <span class="unit-name">Bannerman</span>
+            <span class="unit-role-tag">Support</span>
+            <span class="unit-mini-stats">+20% DMG • 1.8 RNG</span>
+            <span class="unit-price-tag">
+              <svg class="price-coin-svg" viewBox="0 0 16 16" aria-hidden="true">
+                <circle cx="8" cy="8" r="6.5" fill="#ffd166" stroke="#8e5403" stroke-width="1.5" />
+                <circle cx="8" cy="8" r="3.2" fill="none" stroke="#b7791f" stroke-width="1" />
+              </svg>
+              <span class="unit-cost">100g</span>
+            </span>
+          </button>
+
+          <button type="button" class="unit-btn" data-unit-id="miner">
+            <kbd class="unit-hotkey">5</kbd>
+            <span class="unit-card-emblem unit-card-emblem--miner" aria-hidden="true">
+              <svg class="unit-emblem-svg" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="14.5" fill="rgba(212, 172, 13, 0.22)" />
+                <line x1="9" y1="28" x2="23.5" y2="12" stroke="#8e5403" stroke-width="3" stroke-linecap="round" />
+                <path d="M13 10.5c5.5-2.5 11.5 1 14 6.5l-4-2.5-5.5 3.5-2-4.5z" fill="#d5dbdb" stroke="#1b2631" stroke-width="1.2" stroke-linejoin="round" />
+                <polygon points="21,25 25,20.5 30,24 27,29 21.5,29" fill="#ffd166" stroke="#8e5403" stroke-width="1.3" stroke-linejoin="round" />
+                <circle cx="25" cy="24.5" r="1.4" fill="#fff3b0" />
+              </svg>
+            </span>
+            <span class="unit-name">Gold Miner</span>
+            <span class="unit-role-tag">Economy</span>
+            <span class="unit-mini-stats">+35g / WAVE</span>
+            <span class="unit-price-tag">
+              <svg class="price-coin-svg" viewBox="0 0 16 16" aria-hidden="true">
+                <circle cx="8" cy="8" r="6.5" fill="#ffd166" stroke="#8e5403" stroke-width="1.5" />
+                <circle cx="8" cy="8" r="3.2" fill="none" stroke="#b7791f" stroke-width="1" />
+              </svg>
+              <span class="unit-cost">90g</span>
+            </span>
+          </button>
+
+          <button type="button" class="unit-btn" data-unit-id="frost_mage">
+            <kbd class="unit-hotkey">6</kbd>
+            <span class="unit-card-emblem unit-card-emblem--frost_mage" aria-hidden="true">
+              <svg class="unit-emblem-svg" viewBox="0 0 36 36">
+                <circle cx="19" cy="17" r="13.5" fill="rgba(56, 189, 248, 0.22)" />
+                <line x1="9" y1="30" x2="20" y2="16" stroke="#2471a3" stroke-width="3" stroke-linecap="round" />
+                <polygon points="22.5,5.5 27.5,13.5 22.5,21.5 17.5,13.5" fill="#7df9ff" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round" />
+                <polygon points="22.5,9 24.8,13.5 22.5,18 20.2,13.5" fill="#ffffff" opacity="0.88" />
+                <circle cx="12" cy="11" r="1.4" fill="#bae6fd" />
+                <circle cx="29" cy="22" r="1.3" fill="#7df9ff" />
+              </svg>
+            </span>
+            <span class="unit-name">Frost Mage</span>
+            <span class="unit-role-tag">Cryomancer</span>
+            <span class="unit-mini-stats">14 DMG • 3.0 RNG</span>
+            <span class="unit-price-tag">
+              <svg class="price-coin-svg" viewBox="0 0 16 16" aria-hidden="true">
+                <circle cx="8" cy="8" r="6.5" fill="#ffd166" stroke="#8e5403" stroke-width="1.5" />
+                <circle cx="8" cy="8" r="3.2" fill="none" stroke="#b7791f" stroke-width="1" />
+              </svg>
+              <span class="unit-cost">130g</span>
+            </span>
+          </button>
+        </div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
